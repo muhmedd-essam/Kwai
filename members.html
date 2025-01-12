@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>Members</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL21zaGFoZXIub25saW5lL3B1YmxpYy9hcGkvdjEvc3VwZXItYWRtaW4vYXV0aCIsImlhdCI6MTcyMTI1MzU3MSwiZXhwIjoxNzI5ODkzNTcxLCJuYmYiOjE3MjEyNTM1NzEsImp0aSI6IjlSYjdoNmdOZFkxblp1U0siLCJzdWIiOiIxIiwicHJ2IjoiOTcxMDBmOGFjNDQyY2FiMWNkY2RlZmNkNjZkMDZmYzE4YzE0MGZmZCJ9.piyNMjV5tp2BoB2IcjrJFdwKRFQKezZM-kWEPUa_cM0'; // Replace with your actual token
+        let allData = [];
+        let currentPage = 1;
+        const rowsPerPage = 20;
+
+        function populateTable(page = 1, data = allData) {
+            let tableBody = document.querySelector('tbody');
+            tableBody.innerHTML = ''; // Clear existing table rows
+
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const paginatedData = data.slice(start, end);
+
+            paginatedData.forEach((user, index) => {
+                let row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <th scope="row">${start + index + 1}</th>
+                    <td>${user.name}</td>
+                    <td>${user.uid}</td>
+                    <td>
+                        <div>
+                            <label>
+                                <input type="radio" name="supporter-${user.id}" ${user.is_video_hosting == 1 ? 'checked' : ''} onclick="toggleSupporter(${user.id}, true)"> تفعيل
+                            </label>
+                            <label>
+                                <input type="radio" name="supporter-${user.id}" ${user.is_video_hosting == 0 ? 'checked' : ''} onclick="toggleSupporter(${user.id}, false)"> إلغاء
+                            </label>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <label>
+                                <input type="radio" name="owner-${user.id}" ${user.is_group_owner == 1 ? 'checked' : ''} onclick="toggleOwner(${user.id}, true)"> تفعيل
+                            </label>
+                            <label>
+                                <input type="radio" name="owner-${user.id}" ${user.is_group_owner == 0 ? 'checked' : ''} onclick="toggleOwner(${user.id}, false)"> إلغاء
+                            </label>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <label>
+                                <input type="radio" name="assistant-${user.id}" ${user.is_video_cohosting == 1 ? 'checked' : ''} onclick="toggleAssistant(${user.id}, true)"> تفعيل
+                            </label>
+                            <label>
+                                <input type="radio" name="assistant-${user.id}" ${user.is_video_cohosting == 0 ? 'checked' : ''} onclick="toggleAssistant(${user.id}, false)"> إلغاء
+                            </label>
+                        </div>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+
+            updatePagination(page, data.length);
+        }
+
+        function fetchData() {
+            axios.get('https://nice.wolfchat.online/public/api/v1/super-admin/users/all-members', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(function (response) {
+                allData = response.data.data;
+
+                if (!allData || !Array.isArray(allData)) {
+                    console.error('Invalid data structure returned from API:', response.data);
+                    return;
+                }
+
+                populateTable();
+            })
+            .catch(function (error) {
+                console.error('Error fetching data:', error);
+                alert('Failed to fetch user data. Please try again later.');
+            });
+        }
+
+        function toggleSupporter(id, activate) {
+            const url = activate 
+                ? `https://nice.wolfchat.online/public/api/v1/super-admin/users/insert-supporter/${id}`
+                : `https://nice.wolfchat.online/public/api/v1/super-admin/users/delete-supporter/${id}`;
+
+            axios.post(url, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(function () {
+                fetchData();
+            })
+            .catch(function (error) {
+                console.error('Error updating supporter status:', error);
+                alert('Failed to update supporter status. Please try again later.');
+            });
+        }
+
+        function toggleOwner(id, activate) {
+            const url = activate 
+                ? `https://nice.wolfchat.online/public/api/v1/super-admin/users/insert-superadmin/${id}`
+                : `https://nice.wolfchat.online/public/api/v1/super-admin/users/delete-superadmin/${id}`;
+
+            axios.post(url, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(function () {
+                fetchData();
+            })
+            .catch(function (error) {
+                console.error('Error updating owner status:', error);
+                alert('Failed to update owner status. Please try again later.');
+            });
+        }
+
+        function toggleAssistant(id, activate) {
+            const url = activate 
+                ? `https://nice.wolfchat.online/public/api/v1/super-admin/users/insert-admin/${id}`
+                : `https://nice.wolfchat.online/public/api/v1/super-admin/users/delete-admin/${id}`;
+
+            axios.post(url, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(function () {
+                fetchData();
+            })
+            .catch(function (error) {
+                console.error('Error updating assistant status:', error);
+                alert('Failed to update assistant status. Please try again later.');
+            });
+        }
+
+        function searchTable(searchText) {
+            searchText = searchText.trim().toLowerCase();
+            const filteredData = allData.filter(user => user.uid.toLowerCase().includes(searchText));
+            populateTable(1, filteredData);
+        }
+
+        function updatePagination(page, totalItems) {
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            let pagination = document.querySelector('.pagination');
+            pagination.innerHTML = '';
+
+            const createPageItem = (pageNum, isActive) => {
+                let li = document.createElement('li');
+                li.className = `page-item ${isActive ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#">${pageNum}</a>`;
+                li.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    populateTable(pageNum);
+                });
+                return li;
+            };
+
+            pagination.appendChild(createPageItem(page - 1, false));
+            for (let i = 1; i <= totalPages; i++) {
+                pagination.appendChild(createPageItem(i, i === page));
+            }
+            pagination.appendChild(createPageItem(page + 1, false));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('search-uid').addEventListener('input', function () {
+                searchTable(this.value);
+            });
+
+            fetchData();
+        });
+    </script>
+    <style>
+        #edit-room-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <button type="button" class="btn btn-primary" onclick="location.href='https://diark.wolfchat.online/'">الرجوع إلى الصفحة الرئيسية</button>
+    <div class="form-group mt-3 ml-3">
+        <label for="search-uid">البحث بواسطة رقم المستخدم:</label>
+        <input type="text" id="search-uid" class="form-control">
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">الاسم</th>
+                    <th scope="col">رقم المستخدم</th>
+                    <th scope="col">داعم </th>
+                    <th scope="col">super admin</th>
+                    <th scope="col"> admin </th>
+                </tr>
+            </thead>
+            <tbody>
+                 Data will be populated here 
+            </tbody>
+        </table>
+    </div>
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+             Pagination items will be populated here 
+        </ul>
+    </nav>
+</body>
+</html>

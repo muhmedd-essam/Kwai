@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Groups</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbmV3c3RhcmNoYXQuY29tL3B1YmxpYy9hcGkvdjEvc3VwZXItYWRtaW4vYXV0aCIsImlhdCI6MTcyMzE3NDgyNiwiZXhwIjoxNzMxODE0ODI2LCJuYmYiOjE3MjMxNzQ4MjYsImp0aSI6IktXS2ZXaHA3czBEUWhORzIiLCJzdWIiOiIxIiwicHJ2IjoiOTcxMDBmOGFjNDQyY2FiMWNkY2RlZmNkNjZkMDZmYzE4YzE0MGZmZCJ9.RrNKKzzYOzDJnov5XHaO1zW1f6t4H5R2yxpSgCTtMRc';
+
+            function populateTable() {
+                axios.get('https://nice.wolfchat.online/public/api/v1/super-admin/room-backgrounds/all-rooms', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(function (response) {
+                    const data = response.data.data;
+                    let tableBody = document.querySelector('tbody');
+                    tableBody.innerHTML = ''; // Clear existing table rows
+
+                    data.forEach((room, index) => {
+                        let row = document.createElement('tr');
+
+                        row.innerHTML = `
+                            <th scope="row">${index + 1}</th>
+                            <td>${room.name}</td>
+                            <td>${room.rid}</td>
+                            <td>${room.level}</td>
+                            <td>${room.members_count}</td>
+                            <td>${room.description}</td>
+                            <td>${room.has_password ? 'Yes' : 'No'}</td>
+                            <td><button type="button" class="btn btn-success" onclick="editRoom(${room.id}, '${room.rid}', '${room.name}', '${room.description}')">Edit</button></td>
+                        `;
+
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(function (error) {
+                    console.error('Error fetching data:', error);
+                });
+            }
+
+            window.editRoom = function (id, rid, name, description) {
+                document.getElementById('edit-room-id').value = id;
+                document.getElementById('edit-room-rid').value = rid;
+                document.getElementById('edit-room-name').value = name;
+                document.getElementById('edit-room-description').value = description;
+                document.getElementById('edit-room-modal').style.display = 'block';
+            }
+
+            document.getElementById('confirm-edit').addEventListener('click', function () {
+                const id = document.getElementById('edit-room-id').value;
+                const rid = document.getElementById('edit-room-rid').value;
+                const name = document.getElementById('edit-room-name').value;
+                const description = document.getElementById('edit-room-description').value;
+
+                axios.post(`https://nice.wolfchat.online/public/api/v1/super-admin/room-backgrounds/update-room/${id}`, {
+                    rid: rid,
+                    name: name,
+                    description: description
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(function (response) {
+                    document.getElementById('edit-room-modal').style.display = 'none';
+                    populateTable();
+                })
+                .catch(function (error) {
+                    console.error('Error updating data:', error);
+                });
+            });
+
+            document.getElementById('search-rid').addEventListener('input', function () {
+                const searchText = this.value.trim().toLowerCase();
+                const rows = document.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const rid = row.querySelector('td:nth-child(3)').textContent.trim().toLowerCase();
+                    if (rid.includes(searchText)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            populateTable();
+        });
+    </script>
+    <style>
+        #edit-room-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <button type="button" class="btn btn-primary" onclick="location.href='https://diark.wolfchat.online/'">الرجوع إلى الصفحة الرئيسية</button>
+    <div class="form-group mt-3 ml-3">
+        <label for="search-rid">Search by RID:</label>
+        <input type="text" id="search-rid" class="form-control">
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">RID</th>
+                    <th scope="col">Level</th>
+                    <th scope="col">Members Count</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Has Password</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="edit-room-modal">
+        <input type="hidden" id="edit-room-id">
+        <div class="form-group">
+            <label for="edit-room-rid">RID</label>
+            <input type="text" id="edit-room-rid" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="edit-room-name">Name</label>
+            <input type="text" id="edit-room-name" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="edit-room-description">Description</label>
+            <input type="text" id="edit-room-description" class="form-control">
+        </div>
+        <button type="button" class="btn btn-primary" id="confirm-edit">Confirm</button>
+    </div>
+</body>
+</html>
